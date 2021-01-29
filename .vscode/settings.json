@@ -1,6 +1,10 @@
 {
     "files.associations": {
         "*.S": "asm",
-        "vm.h": "c"
+        "vm.h": "c",
+        "parser.h": "c",
+        "ctype.h": "c",
+        "utf8.h": "c",
+        "common.h": "c"
     }
 }
