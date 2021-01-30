@@ -79,3 +79,51 @@ static void skipBlanks(Parser* parser) {
     }
 }
 
+// resolve variable name and function name
+static void parseId(Parser* parser, TokenType type) {
+    // isalnum -> is it a char/num?
+    while(isalnum(parser->curChar) || parser->curChar == '_') {
+        getNextChar(parser);
+    }
+
+    uint32_t length = (uint32_t) (parser->nextCharPtr - parser->curToken.start - 1);
+    if(type != TOKEN_UNKNOWN) {
+        parser->curToken.type = type;
+    } else {
+        parser->curToken.type = isKeyword(parser->curToken.start,length);
+    }
+    parser->curToken.length = length;
+}
+
+// resolve unicode point
+static void parseUnicodePoint(Parser* parser, ByteBuffer* buf) {
+    uint32_t index = 0;
+    int value = 0;
+    uint8_t digit = 0;
+
+    while(index++ < 4) {
+        getNextChar(parser);
+        if(parser->curChar == '\0') {
+            LEX_ERROR(parser, "unterminated unicode!");
+        }
+        if(parser->curChar >= '0' && parser->curChar <= '9') {
+            digit = parser->curChar - '0';
+        }else if (parser->curChar >= 'a' && parser->curChar <= 'f') {
+            digit = parser->curChar - 'a' + 10;
+        } else if (parser->curChar >= 'A' && parser->curChar <= 'F') {
+            digit = parser->curChar - 'A' + 10;
+        } else {
+            LEX_ERROR(parser, "invalid unicode!");
+        }
+        value = (value << 4) | digit;
+    }
+
+    uint32_t byteNum = getByteNumOfEncodeUtf8(value);
+    ASSERT(byteNum != 0, "utf8 encode bytes should be between 1 and 4!");
+
+    // prepare enough space
+    ByteBufferFillWrite(parser->vm, buf, 0, byteNum);
+    encodeUtf8(buf->datas + buf->count - byteNum, value);
+}
+
+

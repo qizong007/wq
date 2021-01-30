@@ -99,7 +99,7 @@ struct parser {
     // record the num of %()
     int interpolationExpectRightParenNum;
     VM* vm;
-} ;
+};
 
 #define PEEK_TOKEN(parserPtr) parserPtr->curToken.type
 
