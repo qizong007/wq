@@ -53,13 +53,13 @@ int decodeUtf8(const uint8_t* bytePtr, uint32_t length){
     uint32_t remainingBytes;
 
     // handle the first byte
-    if((*bytePtr && 0xe0) == 0xc0) { // 110 xxxxx(high)
+    if((*bytePtr & 0xe0) == 0xc0) { // 110 xxxxx(high)
         value = *bytePtr & 0x1f;
         remainingBytes = 1;
-    } else if((*bytePtr && 0xf0) == 0xe0) { // 1110 xxxx(high)
+    } else if((*bytePtr & 0xf0) == 0xe0) { // 1110 xxxx(high)
         value = *bytePtr & 0x0f;
         remainingBytes = 2;
-    } else if((*bytePtr && 0x80) == 0xf0) { // 11110 xxx(high)
+    } else if((*bytePtr & 0xf8) == 0xf0) { // 11110 xxx(high)
         value = *bytePtr & 0x07;
         remainingBytes = 3;
     } else {

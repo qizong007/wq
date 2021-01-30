@@ -29,11 +29,11 @@ typedef struct class Class;
     #define ASSERT(condition,errMsg) ((void)0)
 #endif
 
-#define NOT_REACHED() \
+#define NOT_REACHED()\
     do { \
             fprintf(stderr, "NOT_REACHED failed! %s:%d In function %s()\n", \
             __FILE__, __LINE__,__func__); \
-        while(1); \             
+            while(1);\
     } while(0);
 
 #endif

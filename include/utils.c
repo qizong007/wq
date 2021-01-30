@@ -39,10 +39,10 @@ uint32_t ceilToPowerOf2(uint32_t v){
     return v;
 }
 
-DECLARE_BUFFER_METHOD(String)
-DECLARE_BUFFER_METHOD(Byte)
-DECLARE_BUFFER_METHOD(Int)
-DECLARE_BUFFER_METHOD(Char)
+DEFINE_BUFFER_METHOD(String)
+DEFINE_BUFFER_METHOD(Int)
+DEFINE_BUFFER_METHOD(Char)
+DEFINE_BUFFER_METHOD(Byte)
 
 void symbolTableClear(VM* vm, SymbolTable* buffer){
     uint32_t index = 0;
@@ -53,10 +53,10 @@ void symbolTableClear(VM* vm, SymbolTable* buffer){
 }
 
 void errorReport(void* parser, ErrorType errorType, const char* fmt, ...) {
-    char buffer[DEFAULT_BUfFER_SIZE] = {'\0'};
+    char buffer[DEFAULT_BUFFER_SIZE] = {'\0'};
     va_list ap;
     va_start(ap, fmt);
-    vsnprintf(buffer, DEFAULT_BUfFER_SIZE, fmt, ap);
+    vsnprintf(buffer, DEFAULT_BUFFER_SIZE, fmt, ap);
     va_end(ap);
 
     switch (errorType) {

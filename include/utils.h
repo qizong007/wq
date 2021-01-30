@@ -82,15 +82,15 @@ typedef struct {
         type##BufferInit(buf); \
     }
 
+DECLARE_BUFFER_TYPE(String)
 #define SymbolTable StringBuffer
-
 typedef uint8_t Byte;
 typedef char Char;
 typedef int Int;
-DECLARE_BUFFER_TYPE(String)
 DECLARE_BUFFER_TYPE(Byte)
-DECLARE_BUFFER_TYPE(Char)
 DECLARE_BUFFER_TYPE(Int)
+DECLARE_BUFFER_TYPE(Char)
+
 
 // error handling
 typedef enum {
@@ -110,6 +110,6 @@ void symbolTableClear(VM* vm, SymbolTable* buffer);
 #define COMPILE_ERROR(parser,...) errorReport(parser,ERROR_COMPILE,__VA_ARGS__)
 #define RUN_ERROR(...) errorReport(NULL,ERROR_RUNTIME,__VA_ARGS__)
 
-#define DECLARE_BUFFER_SIZE 512
+#define DEFAULT_BUFFER_SIZE 512
 
-#define endif
+#endif

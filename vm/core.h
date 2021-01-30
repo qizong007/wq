@@ -3,6 +3,6 @@
 #define _VM_CORE_H
 
 extern char* rootDir;
-char* readLine(const char* sourceFile);
+char* readFile(const char* sourceFile);
 
 #endif

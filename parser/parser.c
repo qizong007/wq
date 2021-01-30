@@ -126,4 +126,302 @@ static void parseUnicodePoint(Parser* parser, ByteBuffer* buf) {
     encodeUtf8(buf->datas + buf->count - byteNum, value);
 }
 
+// resolve string(still not be used)
+static void parseString(Parser* parser) {
+    ByteBuffer str;
+    ByteBufferInit(&str);
+    while(true) {
+        getNextChar(parser);
 
+        if(parser->curChar == '\0') {
+            LEX_ERROR(parser, "unterminated string!");
+        }
+
+        if(parser->curChar == '"') {
+            parser->curToken.type = TOKEN_STRING;
+            break;
+        }
+
+        if (parser->curChar == '%') {
+            if (!matchNextChar(parser, '(')) {
+                LEX_ERROR(parser, "'%' should followed by '('!");
+            }
+            if (parser->interpolationExpectRightParenNum > 0) {
+                COMPILE_ERROR(parser, "sorry, I don`t support nest interpolate expression!");
+            }
+            parser->interpolationExpectRightParenNum = 1;
+            parser->curToken.type = TOKEN_INTERPOLATION;
+            break;
+        }
+
+        if (parser->curChar == '\\') {   
+            getNextChar(parser);
+            switch (parser->curChar) {
+                case '0': 
+                    ByteBufferAdd(parser->vm, &str, '\0'); 
+                    break;
+                case 'a': 
+                    ByteBufferAdd(parser->vm, &str, '\a'); 
+                    break;
+                case 'b': 
+                    ByteBufferAdd(parser->vm, &str, '\b');
+                    break;
+                case 'f':
+                    ByteBufferAdd(parser->vm, &str, '\f'); 
+                    break;
+                case 'n': 
+                    ByteBufferAdd(parser->vm, &str, '\n'); 
+                    break;
+                case 'r': 
+                    ByteBufferAdd(parser->vm, &str, '\r'); 
+                    break;
+                case 't': 
+                    ByteBufferAdd(parser->vm, &str, '\t'); 
+                    break;
+                case 'u': 
+                    parseUnicodePoint(parser, &str); 
+                    break;
+                case '"': 
+                    ByteBufferAdd(parser->vm, &str, '"'); 
+                    break;
+                case '\\': 
+                    ByteBufferAdd(parser->vm, &str, '\\'); 
+                    break;
+                default:
+                    LEX_ERROR(parser, "unsupport escape \\%c", parser->curChar);
+                    break;
+            }
+        } else { // normal character
+            ByteBufferAdd(parser->vm, &str, parser->curChar); 
+        }     
+    }
+    ByteBufferClear(parser->vm, &str);
+}
+
+static void skipToNextLine(Parser* parser){
+    getNextChar(parser);
+    while(parser->curChar != '\0') {
+        if(parser->curChar == '\n') {
+            parser->curToken.lineNo++;
+            getNextChar(parser);
+            break;
+        }
+        getNextChar(parser);
+    }
+}
+
+static void skipComment(Parser* parser) {
+    char nextChar = lookAheadChar(parser);
+    if(parser->curChar == '/') { // line comment
+        skipToNextLine(parser);
+    } else { //block comment      
+        while (nextChar != '*' && nextChar != '\0') {
+            getNextChar(parser);
+            if (parser->curChar == '\n') {
+                parser->curToken.lineNo++;
+            }
+            nextChar = lookAheadChar(parser);
+        }
+        if (matchNextChar(parser, '*')) {
+            if (!matchNextChar(parser, '/')) {   
+                LEX_ERROR(parser, "expect '/' after '*'!");
+            }
+            getNextChar(parser);
+        } else {
+            LEX_ERROR(parser, "expect '*/' before file end!");
+        }
+    }
+    skipBlanks(parser); 
+}
+
+/* 
+ * Parser's real part: a set of functions
+ * An interface -> get the lex mean, and set the type
+*/
+void getNextToken(Parser* parser) {
+    parser->preToken = parser->curToken;
+    skipBlanks(parser);
+    // init curToken
+    parser->curToken.type = TOKEN_EOF;
+    parser->curToken.length = 0;
+    parser->curToken.start = parser->nextCharPtr - 1;
+
+    while(parser->curChar != '\0') {
+        switch(parser->curChar) {
+            case ',':
+                parser->curToken.type = TOKEN_COMMA;
+	            break;
+            case ':':
+                parser->curToken.type = TOKEN_COLON;
+                break;
+            case '(':
+                if(parser->interpolationExpectRightParenNum > 0) {
+                    parser->interpolationExpectRightParenNum++;
+                }
+                parser->curToken.type = TOKEN_LEFT_PAREN;
+            case ')':
+                if (parser->interpolationExpectRightParenNum > 0) {
+                    parser->interpolationExpectRightParenNum--;
+                    if (parser->interpolationExpectRightParenNum == 0) {
+                        // continue to parse the string
+                        parseString(parser);
+                        break;
+                    }
+                }
+                parser->curToken.type = TOKEN_RIGHT_PAREN;
+                break;
+            case '[':
+                parser->curToken.type = TOKEN_LEFT_BRACKET;
+                break;
+            case ']':
+                parser->curToken.type = TOKEN_RIGHT_BRACKET;
+                break;
+            case '{':
+                parser->curToken.type = TOKEN_LEFT_BRACE;
+                break;
+            case '}':
+                parser->curToken.type = TOKEN_RIGHT_BRACE;
+                break;
+            case '.':
+                if (matchNextChar(parser, '.')) {
+                    parser->curToken.type = TOKEN_DOT_DOT;
+                } else {
+                    parser->curToken.type = TOKEN_DOT;
+                }
+                break;
+            case '=':
+                if (matchNextChar(parser, '=')) {
+                    parser->curToken.type = TOKEN_EQUAL;
+                } else {
+                    parser->curToken.type = TOKEN_ASSIGN;
+                }
+                break;
+            case '+':
+                parser->curToken.type = TOKEN_ADD;
+                break;
+            case '-':
+                parser->curToken.type = TOKEN_SUB;
+                break;
+            case '*':
+                parser->curToken.type = TOKEN_MUL;
+                break;
+            case '/':
+                // skip comment '//' or '/**/'
+                if (matchNextChar(parser, '/') || matchNextChar(parser, '*')) {
+                    skipComment(parser);
+                    // reset next token address
+                    parser->curToken.start = parser->nextCharPtr - 1;
+                    continue;
+                } else {		 // '/'
+                    parser->curToken.type = TOKEN_DIV;
+                }
+                break;
+            case '%':
+                parser->curToken.type = TOKEN_MOD;
+                break;
+            case '&':
+                if (matchNextChar(parser, '&')) {
+                    parser->curToken.type = TOKEN_LOGIC_AND;
+                } else {
+                    parser->curToken.type = TOKEN_BIT_AND;
+                }
+                break;
+            case '|':
+                if (matchNextChar(parser, '|')) {
+                    parser->curToken.type = TOKEN_LOGIC_OR;
+                } else {
+                    parser->curToken.type = TOKEN_BIT_OR;
+                }
+                break;
+            case '~':
+                parser->curToken.type = TOKEN_BIT_NOT;
+                break;
+            case '?':
+                parser->curToken.type = TOKEN_QUESTION;
+                break;
+            case '>':
+                if (matchNextChar(parser, '=')) {
+                    parser->curToken.type = TOKEN_GREATE_EQUAL;
+                } else if (matchNextChar(parser, '>')) {
+                    parser->curToken.type = TOKEN_BIT_SHIFT_RIGHT;
+                } else {
+                    parser->curToken.type = TOKEN_GREATE;
+                }
+                break;
+            case '<':
+                if (matchNextChar(parser, '=')) {
+                    parser->curToken.type = TOKEN_LESS_EQUAL;
+                } else if (matchNextChar(parser, '<')) {
+                    parser->curToken.type = TOKEN_BIT_SHIFT_LEFT;
+                } else {
+                    parser->curToken.type = TOKEN_LESS;
+                }
+                break;
+            case '!':
+                if (matchNextChar(parser, '=')) {
+                    parser->curToken.type = TOKEN_NOT_EQUAL;
+                } else {
+                    parser->curToken.type = TOKEN_LOGIC_NOT;
+                }
+                break;
+            case '"':
+                parseString(parser);
+                break;
+            default:  // parse variable name and number           
+                if (isalpha(parser->curChar) || parser->curChar == '_') {
+                    parseId(parser, TOKEN_UNKNOWN);  
+                } else {
+                    // magic number
+                    if (parser->curChar == '#' && matchNextChar(parser, '!')) {
+                        skipToNextLine(parser);
+                        parser->curToken.start = parser->nextCharPtr - 1;  //閲嶇疆涓嬩竴涓猼oken璧峰鍦板潃
+                        continue;
+                    } 
+                    LEX_ERROR(parser, "unsupport char: \'%c\', quit.", parser->curChar);
+                }
+                return;
+        }
+        // most case jump to here
+        parser->curToken.length = (uint32_t)(parser->nextCharPtr - parser->curToken.start);
+        getNextChar(parser);
+        return;
+    }
+}
+
+bool matchToken(Parser* parser, TokenType expected) {
+    if(parser->curToken.type == expected) {
+        getNextToken(parser);
+        return true;
+    }
+    return false;
+}
+
+// like an ASSERT for expected current TOKEN type
+void consumeCurToken(Parser* parser, TokenType expected, const char* errMsg) {
+    if(parser->curToken.type != expected) {
+        COMPILE_ERROR(parser, errMsg);
+    }
+    getNextToken(parser);
+}
+
+// like an ASSERT for expected next TOKEN type
+void consumeNextToken(Parser* parser, TokenType expected, const char* errMsg) {
+    getNextToken(parser);
+    if(parser->curToken.type != expected) {
+        COMPILE_ERROR(parser, errMsg);
+    }  
+}
+
+void initParser(VM* vm, Parser* parser, const char* file, const char* sourceCode) {
+    parser->file = file;
+    parser->sourceCode = sourceCode;
+    parser->nextCharPtr = sourceCode + 1;
+    parser->curChar = *parser->sourceCode;
+    parser->curToken.lineNo = 1;
+    parser->curToken.type = TOKEN_UNKNOWN;
+    parser->curToken.start = NULL;
+    parser->curToken.length = 0;
+    parser->preToken = parser->curToken;
+    parser->interpolationExpectRightParenNum = 0;
+    parser->vm = vm;
+}
