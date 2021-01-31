@@ -259,6 +259,7 @@ void getNextToken(Parser* parser) {
                     parser->interpolationExpectRightParenNum++;
                 }
                 parser->curToken.type = TOKEN_LEFT_PAREN;
+                break;
             case ')':
                 if (parser->interpolationExpectRightParenNum > 0) {
                     parser->interpolationExpectRightParenNum--;

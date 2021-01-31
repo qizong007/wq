@@ -7,6 +7,7 @@
         "utf8.h": "c",
         "common.h": "c",
         "core.h": "c",
-        "utils.h": "c"
+        "utils.h": "c",
+        "*.list": "c"
     }
 }
