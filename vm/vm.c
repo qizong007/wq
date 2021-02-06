@@ -5,6 +5,7 @@
 void initVM(VM* vm){
     vm->allocatedBytes = 0;
     vm->curParser = NULL;
+    vm->allObjects = NULL;
 }
 
 VM* newVM(){

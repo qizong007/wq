@@ -10,8 +10,8 @@ void* memManager(VM* vm, void* ptr, uint32_t oldSize, uint32_t newSize);
     (type*)memManager(vmPtr, NULL, 0, sizeof(type))
 
 // for flexible array
-#define ALLOCATE_EXTRA(vmPtr, mainType, extraType) \
-    (mainType*)memManager(vmPtr, NULL, 0, sizeof(mainType) + sizeof(extraType))
+#define ALLOCATE_EXTRA(vmPtr, mainType, extraSize) \
+    (mainType*)memManager(vmPtr, NULL, 0, sizeof(mainType) + extraSize)
 
 // for array allocation
 #define ALLOCATE_ARRAY(vmPtr, type, count) \

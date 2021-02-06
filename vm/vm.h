@@ -4,7 +4,10 @@
 #include "common.h"
 
 struct vm {
+    Class* stringClass;
+    Class* fnClass;
     uint32_t allocatedBytes;
+    ObjHeader* allObjects; // all allocated objects
     Parser* curParser; // current parser
 };
 

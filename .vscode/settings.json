@@ -8,6 +8,12 @@
         "common.h": "c",
         "core.h": "c",
         "utils.h": "c",
-        "*.list": "c"
+        "*.list": "c",
+        "obj_string.h": "c",
+        "string.h": "c",
+        "stdlib.h": "c",
+        "class.h": "c",
+        "obj_meta.h": "c",
+        "stdio.h": "c"
     }
 }
