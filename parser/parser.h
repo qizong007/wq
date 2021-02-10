@@ -2,6 +2,7 @@
 #define _PARSER_PARSER_H
 #include "common.h"
 #include "vm.h"
+#include "class.h"
 
 typedef enum {
     TOKEN_UNKNOWN,
@@ -87,6 +88,7 @@ typedef struct {
     const char* start;
     uint32_t length;
     uint32_t lineNo;
+    Value value;
 } Token;
 
 struct parser {
@@ -96,6 +98,7 @@ struct parser {
     char curChar;
     Token curToken;
     Token preToken;
+    ObjModule* curModule;   // current compiling module
     // record the num of %()
     int interpolationExpectRightParenNum;
     VM* vm;
@@ -110,6 +113,6 @@ void consumeCurToken(Parser* parser, TokenType expected, const char* errMsg);
 void consumeNextToken(Parser* parser, TokenType expected, const char* errMsg);
 uint32_t getByteNumOfEncodeUtf8(int value);
 uint8_t encodeUtf8(uint8_t* buf, int value);
-void initParser(VM* vm, Parser* parser, const char* file, const char* sourceCode);
+void initParser(VM* vm, Parser* parser, const char* file, const char* sourceCode, ObjModule* objModule);
 
 #endif

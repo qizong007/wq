@@ -14,6 +14,11 @@
         "stdlib.h": "c",
         "class.h": "c",
         "obj_meta.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "obj_header.h": "c",
+        "cli.h": "c",
+        "obj_list.h": "c",
+        "obj_range.h": "c",
+        "obj_map.h": "c"
     }
 }

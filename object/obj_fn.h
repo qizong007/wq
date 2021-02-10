@@ -36,6 +36,7 @@ typedef struct {
    ObjUpvalue* upvalues[0]; // for close upvalue
 } ObjClosure;
 
+// function context
 typedef struct {
    uint8_t* ip;    
    ObjClosure* closure;
