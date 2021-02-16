@@ -19,6 +19,7 @@
         "cli.h": "c",
         "obj_list.h": "c",
         "obj_range.h": "c",
-        "obj_map.h": "c"
+        "obj_map.h": "c",
+        "compiler.h": "c"
     }
 }
