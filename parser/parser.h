@@ -99,8 +99,11 @@ struct parser {
     Token curToken;
     Token preToken;
     ObjModule* curModule;   // current compiling module
+    CompileUnit* curCompileUnit; 
     // record the num of %()
     int interpolationExpectRightParenNum;
+    struct parser* parent;
+
     VM* vm;
 };
 

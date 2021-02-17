@@ -212,11 +212,6 @@ VMResult executeModule(VM* vm, Value moduleName, const char* moduleCode) {
 void buildCore(VM* vm) {
     ObjModule* coreModule = newObjModule(vm, NULL);
     mapSet(vm, vm->allModules, CORE_MODULE, OBJ_TO_VALUE(coreModule));
-}
-
-void buildCore(VM* vm) {
-    ObjModule* coreModule = newObjModule(vm, NULL);
-    mapSet(vm, vm->allModules, CORE_MODULE, OBJ_TO_VALUE(coreModule));
 
     // create object class, and bind methods
     vm->objectClass = defineClass(vm, coreModule, "object");
@@ -244,6 +239,8 @@ void buildCore(VM* vm) {
     vm->objectClass->objHeader.class = objectMetaclass;
     vm->classOfClass->objHeader.class = vm->classOfClass; // close-loop
     objectMetaclass->objHeader.class = vm->classOfClass;
+
+    executeModule(vm, CORE_MODULE, coreModuleCode);
 }
 
 char* readFile(const char* path){
